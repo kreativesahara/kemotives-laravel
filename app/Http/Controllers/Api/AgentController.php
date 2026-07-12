@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\DB;
 
 class AgentController extends Controller
 {
+    private const KNOWN_MAKES = [
+        'toyota', 'honda', 'nissan', 'mazda', 'subaru', 'mitsubishi', 'suzuki',
+        'mercedes', 'mercedes-benz', 'bmw', 'audi', 'volkswagen', 'vw', 'porsche',
+        'land rover', 'range rover', 'lexus', 'hyundai', 'kia', 'ford', 'chevrolet',
+        'peugeot', 'isuzu', 'daihatsu', 'volvo', 'jaguar', 'jeep', 'mini',
+        'fiat', 'renault', 'tesla', 'bentley', 'rolls royce', 'maserati',
+        'alfa romeo', 'chrysler', 'dodge', 'ram', 'cadillac', 'buick', 'acura',
         'infiniti', 'genesis', 'lincoln', 'gmc', 'hummer'
     ];
 
@@ -337,16 +344,17 @@ class AgentController extends Controller
 
             $parsed = $this->parseNaturalLanguage($message);
 
+            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
             $query = Car::where('is_active', 'true')->where('status', 'active')->with('images');
 
-            if ($parsed['make']) $query->where('make', 'ilike', '%' . $parsed['make'] . '%');
-            if ($parsed['model']) $query->where('model', 'ilike', '%' . $parsed['model'] . '%');
-            if ($parsed['location']) $query->where('view_location', 'ilike', '%' . $parsed['location'] . '%');
-            if ($parsed['condition']) $query->where('car_condition', 'ilike', '%' . $parsed['condition'] . '%');
-            if ($parsed['fuelType']) $query->where('fuel_type', 'ilike', '%' . $parsed['fuelType'] . '%');
-            if ($parsed['transmission']) $query->where('transmission', 'ilike', '%' . $parsed['transmission'] . '%');
-            if ($parsed['driveSystem']) $query->where('drive_system', 'ilike', '%' . $parsed['driveSystem'] . '%');
-            if ($parsed['category']) $query->where('category', 'ilike', '%' . $parsed['category'] . '%');
+            if ($parsed['make']) $query->where('make', $like, '%' . $parsed['make'] . '%');
+            if ($parsed['model']) $query->where('model', $like, '%' . $parsed['model'] . '%');
+            if ($parsed['location']) $query->where('view_location', $like, '%' . $parsed['location'] . '%');
+            if ($parsed['condition']) $query->where('car_condition', $like, '%' . $parsed['condition'] . '%');
+            if ($parsed['fuelType']) $query->where('fuel_type', $like, '%' . $parsed['fuelType'] . '%');
+            if ($parsed['transmission']) $query->where('transmission', $like, '%' . $parsed['transmission'] . '%');
+            if ($parsed['driveSystem']) $query->where('drive_system', $like, '%' . $parsed['driveSystem'] . '%');
+            if ($parsed['category']) $query->where('category', $like, '%' . $parsed['category'] . '%');
             if ($parsed['priceMin']) $query->where('price', '>=', $parsed['priceMin']);
             if ($parsed['priceMax']) $query->where('price', '<=', $parsed['priceMax']);
             if ($parsed['yearMin']) $query->where('yom', '>=', $parsed['yearMin']);

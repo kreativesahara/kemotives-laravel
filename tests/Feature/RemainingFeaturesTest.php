@@ -87,6 +87,7 @@ class RemainingFeaturesTest extends TestCase
             $table->id();
             $table->foreignId('car_id')->constrained('cars')->cascadeOnDelete();
             $table->string('image_url');
+            $table->timestamps();
         });
 
         Schema::create('accessories', function (Blueprint $table) {
@@ -166,6 +167,12 @@ class RemainingFeaturesTest extends TestCase
             'ai_score' => 90,
             'ai_notes' => 'Good',
             'views' => 10
+        ]);
+
+        // Add a car image so it shows up in FilterController which enforces has('images')
+        CarImage::create([
+            'car_id' => $this->car1->id,
+            'image_url' => 'http://example.com/car.jpg'
         ]);
 
         // Create an Accessory
