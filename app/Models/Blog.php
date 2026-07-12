@@ -34,4 +34,26 @@ class Blog extends Model
     {
         return $this->belongsTo(User::class, 'author_id');
     }
+
+    public function toArray()
+    {
+        $array = parent::toArray();
+        return [
+            'id' => $array['id'] ?? null,
+            'title' => $array['title'] ?? null,
+            'slug' => $array['slug'] ?? null,
+            'description' => $array['description'] ?? null,
+            'imageUrl' => $array['image_url'] ?? null,
+            'content' => $array['content'] ?? null,
+            'backlinks' => $array['backlinks'] ?? null,
+            'authorId' => $array['author_id'] ?? null,
+            'metaDescription' => $array['meta_description'] ?? null,
+            'metaKeywords' => $array['meta_keywords'] ?? null,
+            'isPublished' => $array['is_published'] ?? false,
+            'publishedAt' => $array['published_at'] ?? null,
+            'createdAt' => $array['created_at'] ?? null,
+            'updatedAt' => $array['updated_at'] ?? null,
+            'votes' => $array['votes'] ?? 0,
+        ];
+    }
 }
