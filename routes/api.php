@@ -48,8 +48,8 @@ Route::get('/blogs/{slug}', [BlogController::class, 'getBlogBySlug']);
 Route::patch('/blogs/view/{slug}', [BlogController::class, 'trackBlogView']);
 
 // Votes
-Route::get('/votes', [VoteController::class, 'getVotes']);
-Route::get('/votes/{id}', [VoteController::class, 'getVoteById']);
+Route::get('/blogs/{blogId}/votes/total', [VoteController::class, 'getTotalVotes']);
+Route::get('/blogs/{blogId}/vote', [VoteController::class, 'getBlogVotes']);
 
 // Search & Filter & Compare
 Route::get('/search', [SearchController::class, 'searchCarProduct']);
@@ -102,7 +102,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/blogs/{id}/publish', [BlogController::class, 'publishBlog']);
 
     // Votes
-    Route::post('/votes/{blogId}', [VoteController::class, 'handleVote']);
+    Route::post('/blogs/{blogId}/vote', [VoteController::class, 'handleVote']);
 
     // Accessories
     Route::post('/accessories', [AccessoriesController::class, 'createAccessory']);
@@ -119,6 +119,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users', [UsersController::class, 'createUser']);
     Route::patch('/users', [UsersController::class, 'updateUser']);
     Route::delete('/users', [UsersController::class, 'deleteUser']);
+    Route::get('/product/seller/{sellerId}', [VehicleController::class, 'sellerProducts']);
+    Route::get('/product/listing-limit/{sellerId}', [VehicleController::class, 'limitStatus']);
+    Route::post('/product', [VehicleController::class, 'store']);
+    Route::patch('/product', [VehicleController::class, 'update']);
+    Route::patch('/product/toggle-status/{id}', [VehicleController::class, 'toggleActiveStatus']);
+    Route::delete('/product/{id}', [VehicleController::class, 'destroy']);
 });
 
 Route::get('/publicproducts', [VehicleController::class, 'index']);

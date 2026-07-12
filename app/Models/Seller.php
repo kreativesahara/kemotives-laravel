@@ -27,4 +27,22 @@ class Seller extends Model
     {
         return $this->hasMany(Car::class, 'seller_id', 'user_id');
     }
+
+    public function toArray()
+    {
+        $array = parent::toArray();
+        return [
+            'id' => $array['id'] ?? null,
+            'userId' => $array['user_id'] ?? null,
+            'username' => $array['username'] ?? null,
+            'accountType' => $array['account_type'] ?? null,
+            'contact' => $array['contact'] ?? null,
+            'place' => $array['place'] ?? null,
+            'imageUrl' => $array['image_url'] ?? null,
+            'hasFinancing' => $array['has_financing'] ?? false,
+            'acceptsTradeIn' => $array['accepts_trade_in'] ?? false,
+            'hasSubscription' => $array['has_subscription'] ?? false,
+            'createdAt' => $array['created_at'] ?? null,
+        ];
+    }
 }

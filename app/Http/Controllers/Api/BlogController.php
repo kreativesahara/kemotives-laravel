@@ -87,7 +87,7 @@ class BlogController extends Controller
         }
     }
 
-    public function getPublishedBlogs()
+    public function getAllBlogs()
     {
         $blogs = Blog::where('is_published', true)->orderBy('published_at')->get();
         return response()->json($blogs);
