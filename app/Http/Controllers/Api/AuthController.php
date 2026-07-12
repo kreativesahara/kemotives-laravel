@@ -20,8 +20,8 @@ class AuthController extends Controller
         ]);
 
         $user = clone new User();
-        $user->firstname = $request->firstname;
-        $user->lastname = $request->lastname;
+        $user->first_name = $request->firstname;
+        $user->last_name = $request->lastname;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
         $user->roles = 1; // ROLES_LIST.Visitor
@@ -30,8 +30,8 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'User registered successfully.',
             'user' => [
-                'firstname' => $user->firstname,
-                'lastname' => $user->lastname,
+                'firstname' => $user->first_name,
+                'lastname' => $user->last_name,
                 'email' => $user->email,
                 'roles' => $user->roles,
             ]
@@ -47,8 +47,14 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !password_verify($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid email or password.'], 406);
+        }
+
+        // Migrate $2b$ hashes from Node.js to Laravel's native $2y$ (Bcrypt) upon successful login
+        if (password_needs_rehash($user->password, PASSWORD_BCRYPT)) {
+            $user->password = Hash::make($request->password);
+            $user->save();
         }
 
         // Generate Access Token (Sanctum PAT expiring in 15 minutes)
@@ -57,7 +63,7 @@ class AuthController extends Controller
 
         // Generate Refresh Token string (custom random string saved to DB)
         $refreshToken = Str::random(60);
-        $user->refreshToken = $refreshToken;
+        $user->refresh_token = $refreshToken;
         $user->save();
 
         return response()->json([
@@ -78,7 +84,7 @@ class AuthController extends Controller
             return response()->json(['error' => 'Refresh token required'], 401);
         }
 
-        $user = User::where('refreshToken', $refreshToken)->first();
+        $user = User::where('refresh_token', $refreshToken)->first();
 
         if (!$user) {
             return response()->json(['message' => 'User not found or token invalid.'], 403);
@@ -90,8 +96,8 @@ class AuthController extends Controller
 
         return response()->json([
             'id' => $user->id,
-            'firstname' => $user->firstname,
-            'lastname' => $user->lastname,
+            'firstname' => $user->first_name,
+            'lastname' => $user->last_name,
             'email' => $user->email,
             'roles' => $user->roles,
             'accessToken' => $accessToken,
@@ -106,11 +112,11 @@ class AuthController extends Controller
             return response()->noContent();
         }
 
-        $user = User::where('refreshToken', $refreshToken)->first();
+        $user = User::where('refresh_token', $refreshToken)->first();
 
         if ($user) {
             $user->tokens()->delete();
-            $user->refreshToken = null;
+            $user->refresh_token = null;
             $user->save();
         }
 

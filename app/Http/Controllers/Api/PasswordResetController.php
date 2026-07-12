@@ -26,8 +26,8 @@ class PasswordResetController extends Controller
 
         // Generate secure token
         $resetToken = Str::random(20);
-        $user->resetToken = $resetToken;
-        $user->resetTokenExpiry = now()->addHour(); // Valid for 1 hour
+        $user->reset_token = $resetToken;
+        $user->reset_token_expiry = now()->addHour(); // Valid for 1 hour
         $user->save();
 
         $resetLink = "https://www.diksxcars.co.ke/reset-password?token=" . $resetToken;
@@ -47,19 +47,19 @@ class PasswordResetController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        $user = User::where('resetToken', $token)->first();
+        $user = User::where('reset_token', $token)->first();
 
         if (!$user) {
             return response()->json(['message' => 'Invalid token.'], 400);
         }
 
-        if (!$user->resetTokenExpiry || now()->greaterThan($user->resetTokenExpiry)) {
+        if (!$user->reset_token_expiry || now()->greaterThan($user->reset_token_expiry)) {
             return response()->json(['message' => 'Token has expired.'], 400);
         }
 
         $user->password = Hash::make($request->password);
-        $user->resetToken = null;
-        $user->resetTokenExpiry = null;
+        $user->reset_token = null;
+        $user->reset_token_expiry = null;
         $user->save();
 
         return response()->json(['message' => 'Password reset successful. You can now log in with your new password.']);

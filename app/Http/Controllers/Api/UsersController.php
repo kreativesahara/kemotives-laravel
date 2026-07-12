@@ -69,8 +69,8 @@ class UsersController extends Controller
 
         try {
             $user = User::create([
-                'firstname' => $firstname,
-                'lastname' => $lastname,
+                'first_name' => $firstname,
+                'last_name' => $lastname,
                 'email' => $email,
                 'password' => Hash::make($password),
                 'roles' => 0,
@@ -106,8 +106,8 @@ class UsersController extends Controller
             }
 
             $updates = [];
-            if ($firstname) $updates['firstname'] = $firstname;
-            if ($lastname) $updates['lastname'] = $lastname;
+            if ($firstname) $updates['first_name'] = $firstname;
+            if ($lastname) $updates['last_name'] = $lastname;
             if ($email) $updates['email'] = $email;
             if ($password) $updates['password'] = Hash::make($password);
 

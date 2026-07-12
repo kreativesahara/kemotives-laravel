@@ -11,6 +11,8 @@ class CarImage extends Model
 
     protected $table = 'car_images';
 
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'car_id', 'image_url'
     ];

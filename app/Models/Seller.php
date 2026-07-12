@@ -11,6 +11,8 @@ class Seller extends Model
 
     protected $table = 'sellers';
 
+    const UPDATED_AT = null;
+
     protected $fillable = [
         'user_id', 'username', 'account_type', 'contact', 'place', 'image_url',
         'has_financing', 'accepts_trade_in', 'has_subscription'
