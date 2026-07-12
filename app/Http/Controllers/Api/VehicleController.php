@@ -99,7 +99,7 @@ class VehicleController extends Controller
             'sellerId' => 'required',
             'category' => 'required',
             'images' => 'required|array|max:10',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:5120'
+            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120'
         ]);
 
         // 2. Check limits
