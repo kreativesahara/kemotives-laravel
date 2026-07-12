@@ -150,10 +150,18 @@ it('accepts webhook with valid signature', function () {
         'status' => 'pending'
     ]);
 
-    $response = withHeaders([
-        'X-Signature' => $signature,
-        'Content-Type' => 'application/json'
-    ])->post('/api/webhooks/payment', json_decode($payload, true));
+    $response = $this->call(
+        'POST',
+        '/api/webhooks/payment',
+        [],
+        [],
+        [],
+        [
+            'HTTP_X_Signature' => $signature,
+            'CONTENT_TYPE' => 'application/json'
+        ],
+        $payload
+    );
 
     $response->assertStatus(200);
     

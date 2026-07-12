@@ -6,6 +6,12 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\KycController;
+use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\VoteController;
+use App\Http\Middleware\VerifyWebhookSignature;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -35,9 +41,41 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subscriptions/{userId}', [SubscriptionController::class, 'getSubscription']);
     Route::delete('/subscriptions/cancel/{id}', [SubscriptionController::class, 'cancelSubscription']);
     Route::get('/subscriptions/seller-status/{userId}', [SubscriptionController::class, 'checkSellerStatusAndSubscription']);
+
+    // Payments
+    Route::post('/payments/initiate', [PaymentController::class, 'initiatePayment']);
+    Route::post('/payments/verify', [PaymentController::class, 'verifyPayment']);
+
+    // KYC
+    Route::post('/kyc/submit', [KycController::class, 'submitKYC']);
+    Route::get('/kyc/user/{userId}', [KycController::class, 'getKYCByUserId']);
+    Route::patch('/kyc/{kycId}/status', [KycController::class, 'updateKYCStatus']); // Admin Only (TODO: add admin middleware if needed)
+    Route::get('/kyc', [KycController::class, 'getAllKYCs']); // Admin Only
+    Route::get('/kyc/seller/{sellerId}', [KycController::class, 'getKYC']); // Admin Only
+
+    // Blogs (Authenticated actions)
+    Route::post('/blogs', [BlogController::class, 'createBlog']);
+    Route::patch('/blogs/{id}', [BlogController::class, 'updateBlog']);
+    Route::delete('/blogs/{id}', [BlogController::class, 'deleteBlog']);
+    Route::patch('/blogs/{id}/publish', [BlogController::class, 'publishBlog']);
+
+    // Votes
+    Route::post('/votes/{blogId}', [VoteController::class, 'handleVote']);
 });
 
 Route::get('/publicproducts', [VehicleController::class, 'index']);
+Route::get('/search', [VehicleController::class, 'search']);
+
+// Public Blogs & Votes
+Route::get('/blogs', [BlogController::class, 'getPublishedBlogs']);
+Route::get('/blogs/{slug}', [BlogController::class, 'getBlogBySlug']);
+Route::get('/votes/{blogId}/total', [VoteController::class, 'getTotalVotes']);
+Route::get('/votes/{blogId}', [VoteController::class, 'getBlogVotes']);
+Route::get('/votes/{blogId}/user', [VoteController::class, 'getUserVote']);
+
+// Webhooks
+Route::post('/webhooks/payment', [PaymentWebhookController::class, 'paymentWebhook'])
+    ->middleware(VerifyWebhookSignature::class);
 Route::get('/product/{slug}', [VehicleController::class, 'show']);
 Route::post('/product/{slug}/track-view', [VehicleController::class, 'trackView']);
 
