@@ -12,6 +12,13 @@ class Subscription extends Model
     protected $table = 'subscriptions';
 
     protected $fillable = [
-        'user_id', 'plan_name', 'start_date', 'end_date', 'status'
+        'user_id', 'plan_name', 'amount', 'currency', 'status',
+        'managed_by', 'auto_renewal', 'plan_type', 'start_date', 'end_date'
+    ];
+
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'auto_renewal' => 'boolean',
     ];
 }
