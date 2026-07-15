@@ -29,7 +29,7 @@ class DeleteExpiredUserContent extends Command
         $this->info("Found {$deletionCandidates->count()} users with expired content to delete");
 
         $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
-        $cloudinary = new Cloudinary(['cloudinary_url' => $cloudinaryUrl]);
+        $cloudinary = new Cloudinary($cloudinaryUrl);
 
         foreach ($deletionCandidates as $deletedUser) {
             $userId = $deletedUser->user_id;

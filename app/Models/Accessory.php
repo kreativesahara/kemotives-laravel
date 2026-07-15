@@ -20,6 +20,7 @@ class Accessory extends Model
         'stock' => 'integer',
         'views' => 'integer',
         'cycle_count' => 'integer',
+        'is_active' => 'string',
     ];
 
     public function toArray()
@@ -28,21 +29,21 @@ class Accessory extends Model
         // The Express app maps camelCase keys, let's map snake_case to camelCase
         return [
             'id' => $array['id'],
-            'userId' => $array['user_id'],
-            'name' => $array['name'],
-            'description' => $array['description'],
-            'category' => $array['category'],
-            'slug' => $array['slug'],
-            'condition' => $array['condition'],
-            'location' => $array['location'],
-            'price' => $array['price'],
-            'stock' => $array['stock'],
+            'userId' => $array['user_id'] ?? null,
+            'name' => $array['name'] ?? null,
+            'description' => $array['description'] ?? null,
+            'category' => $array['category'] ?? null,
+            'slug' => $array['slug'] ?? null,
+            'condition' => $array['condition'] ?? null,
+            'location' => $array['location'] ?? null,
+            'price' => $array['price'] ?? 0,
+            'stock' => $array['stock'] ?? 0,
             'imageUrls' => $array['image_urls'] ?? [],
-            'views' => $array['views'],
-            'isActive' => $array['is_active'],
-            'status' => $array['status'],
-            'cycleCount' => $array['cycle_count'],
-            'cycleCountHistory' => $array['cycle_count_history'],
+            'views' => $array['views'] ?? 0,
+            'isActive' => $array['is_active'] ?? 'true',
+            'status' => $array['status'] ?? 'active',
+            'cycleCount' => $array['cycle_count'] ?? 0,
+            'cycleCountHistory' => $array['cycle_count_history'] ?? null,
             'createdAt' => $array['created_at'] ?? null,
             'updatedAt' => $array['updated_at'] ?? null,
         ];

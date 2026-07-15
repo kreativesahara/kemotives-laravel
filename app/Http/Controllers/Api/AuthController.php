@@ -59,7 +59,7 @@ class AuthController extends Controller
 
         // Generate Access Token (Sanctum PAT expiring in 15 minutes)
         $user->tokens()->delete(); // Clear old tokens
-        $accessToken = $user->createToken('access_token', ['*'], now()->addMinutes(15))->plainTextToken;
+        $accessToken = $user->createToken('access_token', ['*'], now()->addHours(24))->plainTextToken;
 
         // Generate Refresh Token string (custom random string saved to DB)
         $refreshToken = Str::random(60);
@@ -92,7 +92,7 @@ class AuthController extends Controller
 
         // Generate new Access Token
         $user->tokens()->delete();
-        $accessToken = $user->createToken('access_token', ['*'], now()->addMinutes(15))->plainTextToken;
+        $accessToken = $user->createToken('access_token', ['*'], now()->addHours(24))->plainTextToken;
 
         return response()->json([
             'id' => $user->id,

@@ -35,7 +35,7 @@ class ProcessCloudinaryUpload implements ShouldQueue
             $cloudinaryUrl = "cloudinary://{$apiKey}:{$apiSecret}@{$cloudName}";
         }
 
-        $cloudinary = new Cloudinary(['cloudinary_url' => $cloudinaryUrl]);
+        $cloudinary = new Cloudinary($cloudinaryUrl);
 
         foreach ($this->localFilePaths as $localPath) {
             $absolutePath = Storage::disk('local')->path($localPath);

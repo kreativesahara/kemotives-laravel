@@ -266,7 +266,7 @@ class VehicleController extends Controller
         }
 
         $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
-        $cloudinary = new Cloudinary(['cloudinary_url' => $cloudinaryUrl]);
+        $cloudinary = new Cloudinary($cloudinaryUrl);
 
         foreach ($car->images as $image) {
             // Delete from Cloudinary

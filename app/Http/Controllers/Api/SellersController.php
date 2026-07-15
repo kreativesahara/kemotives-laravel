@@ -16,7 +16,7 @@ class SellersController extends Controller
     private function getCloudinary()
     {
         $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
-        return new Cloudinary(['cloudinary_url' => $cloudinaryUrl]);
+        return new Cloudinary($cloudinaryUrl);
     }
 
     private function hasActiveSubscription($userId)

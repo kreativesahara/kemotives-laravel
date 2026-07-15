@@ -14,7 +14,7 @@ class AccessoriesController extends Controller
     private function getCloudinary()
     {
         $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
-        return new Cloudinary(['cloudinary_url' => $cloudinaryUrl]);
+        return new Cloudinary($cloudinaryUrl);
     }
 
     private function generateAccessorySlug($name, $condition, $id = null)
@@ -136,6 +136,10 @@ class AccessoriesController extends Controller
                 'location' => $request->input('location'),
                 'image_urls' => $imageUrls,
                 'slug' => $initialSlug,
+                'views' => 0,
+                'is_active' => 'true',
+                'status' => 'active',
+                'cycle_count' => 0,
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
