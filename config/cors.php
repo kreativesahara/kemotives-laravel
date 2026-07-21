@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173'), 'http://localhost:3000', 'http://localhost:4000'],
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173', 'https://kemotives.co.ke, https://www.kemotives.co.ke'), 'http://localhost:3000', 'http://localhost:4000'],
 
     'allowed_origins_patterns' => [],
 
