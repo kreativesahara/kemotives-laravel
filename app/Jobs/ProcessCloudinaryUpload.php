@@ -26,6 +26,9 @@ class ProcessCloudinaryUpload implements ShouldQueue
 
     public function handle()
     {
+        // If the car was deleted before the job was processed, just clean up temp files and exit
+        $carExists = \App\Models\Car::where('id', $this->carId)->exists();
+        
         $cloudinaryUrl = env('CLOUDINARY_URL');
         if (!$cloudinaryUrl) {
             // Reconstruct if not using URL format
@@ -41,23 +44,25 @@ class ProcessCloudinaryUpload implements ShouldQueue
             $absolutePath = Storage::disk('local')->path($localPath);
             
             if (file_exists($absolutePath)) {
-                $uploadResult = $cloudinary->uploadApi()->upload($absolutePath, [
-                    'folder' => "diksx/cars/{$this->carId}",
-                    'resource_type' => 'auto',
-                    'transformation' => [
-                        ['width' => 1000, 'height' => 750, 'crop' => 'fill'],
-                        ['quality' => 'auto']
-                    ]
-                ]);
-
-                if (isset($uploadResult['secure_url'])) {
-                    CarImage::create([
-                        'car_id' => $this->carId,
-                        'image_url' => $uploadResult['secure_url']
+                if ($carExists) {
+                    $uploadResult = $cloudinary->uploadApi()->upload($absolutePath, [
+                        'folder' => "diksx/cars/{$this->carId}",
+                        'resource_type' => 'auto',
+                        'transformation' => [
+                            ['width' => 1000, 'height' => 750, 'crop' => 'fill'],
+                            ['quality' => 'auto']
+                        ]
                     ]);
+
+                    if (isset($uploadResult['secure_url'])) {
+                        CarImage::create([
+                            'car_id' => $this->carId,
+                            'image_url' => $uploadResult['secure_url']
+                        ]);
+                    }
                 }
 
-                // Clean up local temp file
+                // Clean up local temp file regardless of whether car exists or not
                 Storage::disk('local')->delete($localPath);
             }
         }
