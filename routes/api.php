@@ -127,6 +127,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/product/{id}', [VehicleController::class, 'destroy']);
 });
 
+// Support both camelCase and lowercase to prevent 404 errors from inconsistent frontend calls
 Route::get('/publicproducts', [VehicleController::class, 'index']);
+Route::get('/publicProducts', [VehicleController::class, 'index']);
 Route::get('/product/{slug}', [VehicleController::class, 'show']);
 Route::post('/product/{slug}/track-view', [VehicleController::class, 'trackView']);
