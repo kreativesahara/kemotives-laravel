@@ -7,6 +7,8 @@ use App\Repositories\VehicleRepository;
 use App\Services\VehicleService;
 use App\Jobs\ProcessCloudinaryUpload;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\Car;
 use Cloudinary\Cloudinary;
 
 class VehicleController extends Controller
@@ -260,31 +262,50 @@ class VehicleController extends Controller
 
     public function destroy($id)
     {
-        $car = $this->repository->findById($id);
-        if (!$car) {
-            return response()->json(['message' => 'Product not found.'], 404);
-        }
-
-        $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
-        $cloudinary = new Cloudinary($cloudinaryUrl);
-
-        foreach ($car->images as $image) {
-            // Delete from Cloudinary
-            $parts = explode('/', $image->image_url);
-            $filename = end($parts);
-            $publicId = "diksx/cars/{$id}/" . explode('.', $filename)[0];
-            try {
-                $cloudinary->uploadApi()->destroy($publicId);
-            } catch (\Exception $e) {
-                // Log and continue
+        try {
+            $car = Car::with('images')->find($id);
+            if (!$car) {
+                return response()->json(['message' => 'Product not found.'], 404);
             }
+
+            try {
+                $cloudinaryUrl = env('CLOUDINARY_URL') ?? "cloudinary://" . env('CLOUDINARY_API_KEY') . ":" . env('CLOUDINARY_API_SECRET') . "@" . env('CLOUDINARY_CLOUD_NAME');
+                if (env('CLOUDINARY_URL') || (env('CLOUDINARY_API_KEY') && env('CLOUDINARY_API_SECRET') && env('CLOUDINARY_CLOUD_NAME'))) {
+                    $cloudinary = new Cloudinary($cloudinaryUrl);
+
+                    foreach ($car->images as $image) {
+                        if ($image->image_url) {
+                            $parts = explode('/', $image->image_url);
+                            $filename = end($parts);
+                            $publicId = "diksx/cars/{$id}/" . explode('.', $filename)[0];
+                            try {
+                                $cloudinary->uploadApi()->destroy($publicId);
+                            } catch (\Exception $e) {
+                                Log::warning("Failed to delete Cloudinary image: " . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning("Cloudinary cleanup error for product {$id}: " . $e->getMessage());
+            }
+
+            // Explicitly delete associated car_images records first to prevent foreign key constraint violations
+            $car->images()->delete();
+
+            // Delete product
+            $car->delete();
+
+            return response()->json([
+                'message' => 'Product and associated images deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error("Error deleting product {$id}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to delete product',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $this->repository->delete($id);
-
-        return response()->json([
-            'message' => 'Product and associated images deleted successfully'
-        ]);
     }
 
     public function sellerProducts(Request $request, $sellerId)

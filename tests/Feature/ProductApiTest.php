@@ -155,11 +155,49 @@ it('single product returns flat object with productSeller', function () {
     
     $response->assertJsonStructure([
         'id', 'make', 'images', 'productSeller' => [
-            // The productSeller array structure expected by frontend
-            // Express returned: [{ id: 1, userId: 1, username: '...' }]
-            // Wait, Express returned `productSeller: [ { ... } ]` because it did a select without [0]!
-            // Let's verify what Express returned for productSeller.
-            '*' => ['id', 'userId', 'username', 'accountType', 'place'] // wait, did Express map sellers?
+            '*' => ['id', 'userId', 'username', 'accountType', 'place']
         ]
     ]);
+});
+
+it('deletes a product successfully even with images attached', function () {
+    $user = User::factory()->create();
+    $seller = Seller::create([
+        'user_id' => $user->id,
+        'username' => 'TestSeller',
+        'place' => 'Nairobi',
+        'image_url' => 'http://example.com/seller.jpg'
+    ]);
+
+    $car = Car::create([
+        'seller_id' => $seller->user_id,
+        'make' => 'Nissan',
+        'model' => 'X-Trail',
+        'slug' => 'nissan-xtrail-1',
+        'yom' => 2018,
+        'engine_capacity' => '2.0L',
+        'fuel_type' => 'Petrol',
+        'transmission' => 'Automatic',
+        'drive_system' => '4WD',
+        'mileage' => '50000',
+        'features' => 'Sunroof',
+        'car_condition' => 'Used',
+        'view_location' => 'Nairobi',
+        'price' => 1800000,
+        'category' => 'SUV',
+        'is_active' => 'true'
+    ]);
+
+    CarImage::create([
+        'car_id' => $car->id,
+        'image_url' => 'https://res.cloudinary.com/demo/image/upload/v12345/diksx/cars/1/image1.jpg'
+    ]);
+
+    actingAs($user);
+
+    $response = deleteJson("/api/product/{$car->id}");
+    $response->assertStatus(200);
+
+    expect(Car::find($car->id))->toBeNull();
+    expect(CarImage::where('car_id', $car->id)->count())->toBe(0);
 });

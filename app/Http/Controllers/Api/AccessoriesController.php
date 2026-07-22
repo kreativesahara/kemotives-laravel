@@ -239,16 +239,20 @@ class AccessoriesController extends Controller
 
             $images = $accessory->image_urls ?? [];
             if (!empty($images)) {
-                $cloudinary = $this->getCloudinary();
-                foreach ($images as $imageUrl) {
-                    $publicId = $this->extractPublicId($imageUrl);
-                    if ($publicId) {
-                        try {
-                            $cloudinary->uploadApi()->destroy($publicId);
-                        } catch (\Exception $e) {
-                            Log::warning('Error deleting accessory image: ' . $e->getMessage());
+                try {
+                    $cloudinary = $this->getCloudinary();
+                    foreach ($images as $imageUrl) {
+                        $publicId = $this->extractPublicId($imageUrl);
+                        if ($publicId) {
+                            try {
+                                $cloudinary->uploadApi()->destroy($publicId);
+                            } catch (\Exception $e) {
+                                Log::warning('Error deleting accessory image: ' . $e->getMessage());
+                            }
                         }
                     }
+                } catch (\Exception $e) {
+                    Log::warning('Cloudinary initialization error for accessory: ' . $e->getMessage());
                 }
             }
 

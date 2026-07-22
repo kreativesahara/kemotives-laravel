@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
+use App\Models\Vote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -159,25 +160,36 @@ class BlogController extends Controller
 
     public function deleteBlog($id)
     {
-        $blog = Blog::find($id);
-        if (!$blog) {
-            return response()->json(['message' => 'Blog post not found'], 404);
-        }
-
-        if ($blog->image_url) {
-            try {
-                $publicId = $this->extractPublicIdFromUrl($blog->image_url);
-                if ($publicId) {
-                    $cloudinary = $this->getCloudinary();
-                    $cloudinary->uploadApi()->destroy($publicId);
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to delete Cloudinary image: ' . $e->getMessage());
+        try {
+            $blog = Blog::find($id);
+            if (!$blog) {
+                return response()->json(['message' => 'Blog post not found'], 404);
             }
-        }
 
-        $blog->delete();
-        return response()->json([], 204);
+            if ($blog->image_url) {
+                try {
+                    $publicId = $this->extractPublicIdFromUrl($blog->image_url);
+                    if ($publicId) {
+                        $cloudinary = $this->getCloudinary();
+                        $cloudinary->uploadApi()->destroy($publicId);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to delete Cloudinary image: ' . $e->getMessage());
+                }
+            }
+
+            // Delete associated votes to prevent foreign key constraint violations
+            Vote::where('blog_id', $id)->delete();
+
+            $blog->delete();
+            return response()->json(['message' => 'Blog post deleted successfully'], 200);
+        } catch (\Exception $e) {
+            Log::error("Error deleting blog {$id}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to delete blog post',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function publishBlog($id)

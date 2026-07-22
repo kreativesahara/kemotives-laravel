@@ -72,7 +72,12 @@ class VehicleRepository
 
     public function delete(int $id)
     {
-        return Car::destroy($id);
+        $car = Car::find($id);
+        if ($car) {
+            $car->images()->delete();
+            return $car->delete();
+        }
+        return false;
     }
 
     /**

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use function Pest\Laravel\{postJson, getJson, patchJson, actingAs};
+use function Pest\Laravel\{postJson, getJson, patchJson, deleteJson, actingAs};
 
 uses(RefreshDatabase::class);
 
@@ -247,4 +247,27 @@ it('returns total votes for a blog post', function () {
     $response = getJson("/api/votes/{$blog->id}/total");
     $response->assertStatus(200);
     $response->assertJson(['totalVotes' => 2]);
+});
+
+it('deletes a blog post successfully even with votes attached', function () {
+    $user = User::factory()->create();
+    $blog = Blog::create([
+        'title' => 'Blog To Delete',
+        'slug' => 'blog-to-delete',
+        'description' => 'Desc',
+        'image_url' => 'http://test.com/img.jpg',
+        'content' => 'Content',
+        'is_published' => true,
+        'published_at' => now()
+    ]);
+
+    Vote::create(['user_id' => $user->id, 'blog_id' => $blog->id, 'vote' => 1]);
+
+    actingAs($user);
+
+    $response = deleteJson("/api/blogs/{$blog->id}");
+    $response->assertStatus(200);
+
+    expect(Blog::find($blog->id))->toBeNull();
+    expect(Vote::where('blog_id', $blog->id)->count())->toBe(0);
 });

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\DeletedSeller;
 use App\Models\Car;
+use App\Models\CarImage;
 use Cloudinary\Cloudinary;
 use Illuminate\Support\Facades\Log;
 
@@ -46,6 +47,7 @@ class DeleteExpiredUserContent extends Command
                     }
                 }
 
+                CarImage::whereIn('car_id', $sellerProducts->pluck('id'))->delete();
                 Car::where('seller_id', $userId)->delete();
                 Log::info("Deleted {$sellerProducts->count()} products for user ID: {$userId}");
 
