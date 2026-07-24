@@ -90,7 +90,7 @@ class ProcessCloudinaryUpload implements ShouldQueue
      * Attempt a single Cloudinary upload with per-file retries and exponential backoff.
      * This handles transient cURL/DNS errors (error 6) that are common on shared hosting.
      */
-    private function uploadWithRetry(Cloudinary $cloudinary, string $absolutePath, int $maxAttempts): ?array
+    private function uploadWithRetry(Cloudinary $cloudinary, string $absolutePath, int $maxAttempts)
     {
         $attempt = 0;
 
