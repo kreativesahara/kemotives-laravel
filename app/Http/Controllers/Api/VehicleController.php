@@ -174,7 +174,12 @@ class VehicleController extends Controller
         ]);
 
         // 7. Dispatch Cloudinary upload job
-        ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
+        // Use sync in local dev (no queue worker needed), async in production
+        if (app()->environment('local')) {
+            ProcessCloudinaryUpload::dispatchSync($car->id, $localPaths);
+        } else {
+            ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
+        }
 
         // 8. Return response
         return response()->json([
