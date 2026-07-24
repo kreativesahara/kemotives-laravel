@@ -174,11 +174,26 @@ class VehicleController extends Controller
         ]);
 
         // 7. Dispatch Cloudinary upload job
-        // Use sync in local dev (no queue worker needed), async in production
-        if (app()->environment('local')) {
-            ProcessCloudinaryUpload::dispatchSync($car->id, $localPaths);
-        } else {
+        // Respects QUEUE_CONNECTION: 'sync' runs inline, 'database' queues for worker
+        try {
             ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
+        } catch (\Exception $e) {
+            // If running sync and upload fails, clean up the orphan car + temp files
+            Log::error("Cloudinary upload failed for car {$car->id}: " . $e->getMessage());
+            
+            foreach ($localPaths as $path) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+            }
+            
+            // Only delete car if no images were saved (partial success possible with retries)
+            $savedImages = \App\Models\CarImage::where('car_id', $car->id)->count();
+            if ($savedImages === 0) {
+                $car->delete();
+                return response()->json([
+                    'message' => 'Failed to upload images. Please try again.',
+                    'error' => 'cloudinary_upload_failed'
+                ], 503);
+            }
         }
 
         // 8. Return response
