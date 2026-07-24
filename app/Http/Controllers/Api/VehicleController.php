@@ -84,124 +84,136 @@ class VehicleController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validation
-        $request->validate([
-            'make' => 'required',
-            'model' => 'required',
-            'year' => 'required',
-            'engineCapacity' => 'required',
-            'fuelType' => 'required',
-            'transmission' => 'required',
-            'driveSystem' => 'required',
-            'mileage' => 'required',
-            'features' => 'required',
-            'condition' => 'required',
-            'location' => 'required',
-            'price' => 'required',
-            'sellerId' => 'required',
-            'category' => 'required',
-            'images' => 'required|array|min:5|max:10',
-            'images.*' => 'required|file|mimes:jpeg,png,jpg,webp|max:5120'
-        ]);
+        try {
+            // 1. Validation
+            $request->validate([
+                'make' => 'required',
+                'model' => 'required',
+                'year' => 'required',
+                'engineCapacity' => 'required',
+                'fuelType' => 'required',
+                'transmission' => 'required',
+                'driveSystem' => 'required',
+                'mileage' => 'required',
+                'features' => 'required',
+                'condition' => 'required',
+                'location' => 'required',
+                'price' => 'required',
+                'sellerId' => 'required',
+                'category' => 'required',
+                'images' => 'required|array|min:5|max:10',
+                'images.*' => 'required|file|mimes:jpeg,png,jpg,webp|max:5120'
+            ]);
 
-        // 2. Ensure image files are actually present (guard against empty array)
-        if (!$request->hasFile('images') || count($request->file('images')) < 5) {
-            return response()->json([
-                'message' => 'At least 5 image files are required.',
-                'errors' => ['images' => ['At least 5 image files are required.']]
-            ], 422);
-        }
-
-        // 3. Check limits
-        $limitCheck = $this->service->checkSellerListingLimit($request->sellerId);
-
-        if (!$limitCheck['canCreateMore']) {
-            return response()->json([
-                'message' => "Listing limit reached for {$limitCheck['planName']} plan. Maximum {$limitCheck['maxListings']} listings allowed. Current listings: {$limitCheck['currentListingsCount']}",
-                'limitDetails' => $limitCheck
-            ], 403);
-        }
-
-        // 4. Generate Slug
-        $slug = $this->service->generateSlug(
-            $request->make, $request->model, $request->year, $request->location
-        );
-
-        // 5. Store temp files first (before DB insert) to fail fast on storage issues
-        $localPaths = [];
-        foreach ($request->file('images') as $file) {
-            $path = $file->store('temp_uploads', 'local');
-            if (!$path) {
-                // Clean up any already-stored temp files
-                foreach ($localPaths as $storedPath) {
-                    \Illuminate\Support\Facades\Storage::disk('local')->delete($storedPath);
-                }
+            // 2. Ensure image files are actually present (guard against empty array)
+            if (!$request->hasFile('images') || count($request->file('images')) < 5) {
                 return response()->json([
-                    'message' => 'Failed to process uploaded images.',
-                    'errors' => ['images' => ['Failed to store one or more image files.']]
+                    'message' => 'At least 5 image files are required.',
+                    'errors' => ['images' => ['At least 5 image files are required.']]
                 ], 422);
             }
-            $localPaths[] = $path;
-        }
 
-        // 6. Create Product (only after images are confirmed stored)
-        $car = $this->repository->create([
-            'seller_id' => $request->sellerId,
-            'make' => $request->make,
-            'model' => $request->model,
-            'yom' => $request->year,
-            'slug' => $slug,
-            'engine_capacity' => $request->engineCapacity,
-            'fuel_type' => $request->fuelType,
-            'transmission' => $request->transmission,
-            'drive_system' => $request->driveSystem,
-            'mileage' => $request->mileage,
-            'features' => $request->features,
-            'car_condition' => $request->condition,
-            'vehicle_registration_prefix' => $request->vehicleRegPrefix,
-            'vehicle_registration_suffix' => $request->vehicleRegSuffix,
-            'view_location' => $request->location,
-            'price' => $request->price,
-            'category' => $request->category,
-            'ai_grade' => $request->aiGrade,
-            'ai_score' => $request->aiScore,
-            'ai_notes' => $request->aiNotes,
-            'is_active' => "true",
-            'status' => "active",
-            'cycle_count' => 0,
-            'cycle_count_history' => "[]",
-            'views' => 0,
-        ]);
+            // 3. Check limits
+            $limitCheck = $this->service->checkSellerListingLimit($request->sellerId);
 
-        // 7. Dispatch Cloudinary upload job
-        // Respects QUEUE_CONNECTION: 'sync' runs inline, 'database' queues for worker
-        try {
-            ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
-        } catch (\Exception $e) {
-            // If running sync and upload fails, clean up the orphan car + temp files
-            Log::error("Cloudinary upload failed for car {$car->id}: " . $e->getMessage());
-            
-            foreach ($localPaths as $path) {
-                \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
-            }
-            
-            // Only delete car if no images were saved (partial success possible with retries)
-            $savedImages = \App\Models\CarImage::where('car_id', $car->id)->count();
-            if ($savedImages === 0) {
-                $car->delete();
+            if (!$limitCheck['canCreateMore']) {
                 return response()->json([
-                    'message' => 'Failed to upload images. Please try again.',
-                    'error' => 'cloudinary_upload_failed'
-                ], 503);
+                    'message' => "Listing limit reached for {$limitCheck['planName']} plan. Maximum {$limitCheck['maxListings']} listings allowed. Current listings: {$limitCheck['currentListingsCount']}",
+                    'limitDetails' => $limitCheck
+                ], 403);
             }
-        }
 
-        // 8. Return response
-        return response()->json([
-            'message' => 'Product created successfully',
-            'carDetails' => $car->formatForApi(),
-            'listingLimitDetails' => $limitCheck
-        ], 201);
+            // 4. Generate Slug
+            $slug = $this->service->generateSlug(
+                $request->make, $request->model, $request->year, $request->location
+            );
+
+            // 5. Store temp files first (before DB insert) to fail fast on storage issues
+            $localPaths = [];
+            foreach ($request->file('images') as $file) {
+                $path = $file->store('temp_uploads', 'local');
+                if (!$path) {
+                    // Clean up any already-stored temp files
+                    foreach ($localPaths as $storedPath) {
+                        \Illuminate\Support\Facades\Storage::disk('local')->delete($storedPath);
+                    }
+                    return response()->json([
+                        'message' => 'Failed to process uploaded images.',
+                        'errors' => ['images' => ['Failed to store one or more image files.']]
+                    ], 422);
+                }
+                $localPaths[] = $path;
+            }
+
+            // 6. Create Product (only after images are confirmed stored)
+            $car = $this->repository->create([
+                'seller_id' => $request->sellerId,
+                'make' => $request->make,
+                'model' => $request->model,
+                'yom' => $request->year,
+                'slug' => $slug,
+                'engine_capacity' => $request->engineCapacity,
+                'fuel_type' => $request->fuelType,
+                'transmission' => $request->transmission,
+                'drive_system' => $request->driveSystem,
+                'mileage' => $request->mileage,
+                'features' => $request->features,
+                'car_condition' => $request->condition,
+                'vehicle_registration_prefix' => $request->vehicleRegPrefix,
+                'vehicle_registration_suffix' => $request->vehicleRegSuffix,
+                'view_location' => $request->location,
+                'price' => $request->price,
+                'category' => $request->category,
+                'ai_grade' => $request->aiGrade,
+                'ai_score' => $request->aiScore,
+                'ai_notes' => $request->aiNotes,
+                'is_active' => "true",
+                'status' => "active",
+                'cycle_count' => 0,
+                'cycle_count_history' => "[]",
+                'views' => 0,
+            ]);
+
+            // 7. Dispatch Cloudinary upload job
+            // Respects QUEUE_CONNECTION: 'sync' runs inline, 'database' queues for worker
+            try {
+                ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
+            } catch (\Throwable $e) {
+                // If running sync and upload fails, clean up the orphan car + temp files
+                Log::error("Cloudinary upload failed for car {$car->id}: " . $e->getMessage());
+                
+                foreach ($localPaths as $path) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+                }
+                
+                // Only delete car if no images were saved (partial success possible with retries)
+                $savedImages = \App\Models\CarImage::where('car_id', $car->id)->count();
+                if ($savedImages === 0) {
+                    $car->delete();
+                    return response()->json([
+                        'message' => 'Failed to upload images. Please try again.',
+                        'error' => 'cloudinary_upload_failed',
+                        'details' => $e->getMessage()
+                    ], 503);
+                }
+            }
+
+            // 8. Return response
+            return response()->json([
+                'message' => 'Product created successfully',
+                'carDetails' => $car->formatForApi(),
+                'listingLimitDetails' => $limitCheck
+            ], 201);
+
+        } catch (\Throwable $e) {
+            Log::error("Fatal error in VehicleController@store: " . $e->getMessage() . " on line " . $e->getLine() . " in " . $e->getFile());
+            return response()->json([
+                'message' => 'An unexpected server error occurred.',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 
     public function update(Request $request)
