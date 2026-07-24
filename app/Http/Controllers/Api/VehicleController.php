@@ -100,11 +100,19 @@ class VehicleController extends Controller
             'price' => 'required',
             'sellerId' => 'required',
             'category' => 'required',
-            'images' => 'required|array|max:10',
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120'
+            'images' => 'required|array|min:5|max:10',
+            'images.*' => 'required|file|mimes:jpeg,png,jpg,webp|max:5120'
         ]);
 
-        // 2. Check limits
+        // 2. Ensure image files are actually present (guard against empty array)
+        if (!$request->hasFile('images') || count($request->file('images')) < 5) {
+            return response()->json([
+                'message' => 'At least 5 image files are required.',
+                'errors' => ['images' => ['At least 5 image files are required.']]
+            ], 422);
+        }
+
+        // 3. Check limits
         $limitCheck = $this->service->checkSellerListingLimit($request->sellerId);
 
         if (!$limitCheck['canCreateMore']) {
@@ -114,12 +122,29 @@ class VehicleController extends Controller
             ], 403);
         }
 
-        // 3. Generate Slug
+        // 4. Generate Slug
         $slug = $this->service->generateSlug(
             $request->make, $request->model, $request->year, $request->location
         );
 
-        // 4. Create Product
+        // 5. Store temp files first (before DB insert) to fail fast on storage issues
+        $localPaths = [];
+        foreach ($request->file('images') as $file) {
+            $path = $file->store('temp_uploads', 'local');
+            if (!$path) {
+                // Clean up any already-stored temp files
+                foreach ($localPaths as $storedPath) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($storedPath);
+                }
+                return response()->json([
+                    'message' => 'Failed to process uploaded images.',
+                    'errors' => ['images' => ['Failed to store one or more image files.']]
+                ], 422);
+            }
+            $localPaths[] = $path;
+        }
+
+        // 6. Create Product (only after images are confirmed stored)
         $car = $this->repository->create([
             'seller_id' => $request->sellerId,
             'make' => $request->make,
@@ -148,20 +173,10 @@ class VehicleController extends Controller
             'views' => 0,
         ]);
 
-        // 5. Handle Uploads via Queue
-        $localPaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                $path = $file->store('temp_uploads', 'local');
-                $localPaths[] = $path;
-            }
-        }
+        // 7. Dispatch Cloudinary upload job
+        ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
 
-        if (!empty($localPaths)) {
-            ProcessCloudinaryUpload::dispatch($car->id, $localPaths);
-        }
-
-        // 6. Return response
+        // 8. Return response
         return response()->json([
             'message' => 'Product created successfully',
             'carDetails' => $car->formatForApi(),
