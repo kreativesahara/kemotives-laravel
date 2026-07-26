@@ -98,10 +98,11 @@ class ProcessCloudinaryUpload implements ShouldQueue
             try {
                 return $cloudinary->uploadApi()->upload($absolutePath, [
                     'folder' => "diksx/cars/{$this->carId}",
-                    'resource_type' => 'auto',
+                    'resource_type' => 'image',
+                    'format' => 'webp',
                     'transformation' => [
-                        ['width' => 1000, 'height' => 750, 'crop' => 'fill'],
-                        ['quality' => 'auto']
+                        ['width' => 1200, 'height' => 900, 'crop' => 'limit'],
+                        ['quality' => 'auto', 'fetch_format' => 'auto']
                     ]
                 ]);
             } catch (\GuzzleHttp\Exception\ConnectException $e) {
