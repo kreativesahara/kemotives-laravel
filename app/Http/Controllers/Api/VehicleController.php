@@ -205,6 +205,8 @@ class VehicleController extends Controller
                 'listingLimitDetails' => $limitCheck
             ], 201);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error("Fatal error in VehicleController@store: " . $e->getMessage() . " on line " . $e->getLine() . " in " . $e->getFile());
             return response()->json([
