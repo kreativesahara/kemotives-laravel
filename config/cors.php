@@ -17,23 +17,33 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [
-        env('FRONTEND_URL', 'http://localhost:5173'), 
-        'https://kemotives.co.ke', 
+    'allowed_origins' => array_filter([
+        env('FRONTEND_URL', 'http://localhost:5173'),
+        'https://kemotives.co.ke',
         'https://www.kemotives.co.ke',
-        'http://localhost:3000', 
-        'http://localhost:4000'
-    ],
+        'https://api.kemotives.co.ke',
+        'http://localhost:3000',
+        'http://localhost:4000',
+        'http://localhost:5173',
+    ]),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => [
+        'Content-Type',
+        'X-Requested-With',
+        'Authorization',
+        'Accept',
+        'Origin',
+        'X-CSRF-TOKEN',
+        'X-XSRF-TOKEN',
+    ],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['Authorization'],
 
-    'max_age' => 0,
+    'max_age' => 86400, // Cache preflight for 24 hours
 
     'supports_credentials' => true,
 
