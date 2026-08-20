@@ -5,11 +5,11 @@
 
     RewriteEngine On
 
-    # ── CORS Preflight Handling ──────────────────────────────────
-    # Respond to OPTIONS preflight requests at the server level
-    # so LiteSpeed doesn't block them with a 403 before Laravel runs
+    # ── CORS Preflight ──────────────────────────────────────────
+    # Route OPTIONS requests through index.php so Laravel's
+    # CorsMiddleware can handle them (don't let LiteSpeed block them)
     RewriteCond %{REQUEST_METHOD} OPTIONS
-    RewriteRule ^(.*)$ $1 [R=200,L]
+    RewriteRule ^ index.php [L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -25,19 +25,6 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
-</IfModule>
-
-# ── CORS Headers ────────────────────────────────────────────
-# Set CORS headers for all responses from the API
-<IfModule mod_headers.c>
-    SetEnvIf Origin "https://(www\.)?kemotives\.co\.ke$" CORS_ORIGIN=$0
-
-    Header always set Access-Control-Allow-Origin  %{CORS_ORIGIN}e env=CORS_ORIGIN
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, Accept, Origin, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN"
-    Header always set Access-Control-Allow-Credentials "true"
-    Header always set Access-Control-Max-Age "86400"
-    Header always set Vary "Origin"
 </IfModule>
 
 # BEGIN cPanel-generated php ini directives, do not edit
